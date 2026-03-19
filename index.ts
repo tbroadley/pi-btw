@@ -29,20 +29,28 @@ You have access to the recent conversation context below. Use it to give relevan
 
 Be brief and helpful. Use markdown formatting where appropriate. If the question is about code, include short examples. Don't suggest changes to the main task or try to take over — just answer the question.`;
 
-const MAX_CONTEXT_CHARS = 20_000;
+const DEFAULT_CONTEXT_WINDOW_TOKENS = 60_000;
+const CONTEXT_FRACTION = 0.25;
+const CHARS_PER_TOKEN = 3.5;
 const WIDGET_DISMISS_MS = 30_000;
 const WIDGET_ID = "btw-answer";
 
-function getConversationContext(entries: SessionEntry[]): string {
+function getMaxContextChars(contextWindowTokens?: number): number {
+	const tokens = contextWindowTokens && contextWindowTokens > 0 ? contextWindowTokens : DEFAULT_CONTEXT_WINDOW_TOKENS;
+	return Math.floor(tokens * CONTEXT_FRACTION * CHARS_PER_TOKEN);
+}
+
+function getConversationContext(entries: SessionEntry[], contextWindowTokens?: number): string {
 	const messages = entries
 		.filter((entry): entry is SessionEntry & { type: "message" } => entry.type === "message")
 		.map((entry) => entry.message);
 
 	const llmMessages = convertToLlm(messages);
 	let text = serializeConversation(llmMessages);
+	const maxContextChars = getMaxContextChars(contextWindowTokens);
 
-	if (text.length > MAX_CONTEXT_CHARS) {
-		text = "...(earlier conversation truncated)...\n\n" + text.slice(-MAX_CONTEXT_CHARS);
+	if (text.length > maxContextChars) {
+		text = "...(earlier conversation truncated)...\n\n" + text.slice(-maxContextChars);
 	}
 
 	return text;
@@ -128,7 +136,7 @@ export default function (pi: ExtensionAPI) {
 
 				// Build context from current conversation
 				const branch = ctx.sessionManager.getBranch();
-				const conversationContext = getConversationContext(branch);
+				const conversationContext = getConversationContext(branch, ctx.model.contextWindow);
 
 				const systemPrompt = conversationContext
 					? `${SIDE_SYSTEM_PROMPT}\n\n<recent_conversation_context>\n${conversationContext}\n</recent_conversation_context>`
