@@ -27,7 +27,7 @@ const SIDE_SYSTEM_PROMPT = `You are answering a quick side question from the use
 
 You have access to the recent conversation context below. Use it to give relevant answers, but keep your response concise and focused on the side question.
 
-Be brief and helpful. Use markdown formatting where appropriate. If the question is about code, include short examples. Don't suggest changes to the main task or try to take over — just answer the question.`;
+Be brief and helpful — keep your response to two short paragraphs or less. Avoid using code blocks as they take up a lot of vertical space in the widget. Instead, use inline code (\`backticks\`) for short snippets. Don't suggest changes to the main task or try to take over — just answer the question.`;
 
 const DEFAULT_CONTEXT_WINDOW_TOKENS = 60_000;
 const CONTEXT_FRACTION = 0.25;
