@@ -12,7 +12,7 @@ A small [pi](https://github.com/badlogic/pi-mono) extension that adds a `/btw` c
   - estimates size using 3.5 characters per token and keeps the most recent context when truncating
 - shows the result in a temporary widget above the editor
 - keeps the side conversation out of the main agent context
-- lets you dismiss the widget early with `Ctrl+Shift+B`
+- lets you dismiss the widget early with `Ctrl+Shift+B` (or by running `/btw` with no arguments, e.g. in [pirouette](https://github.com/neevparikh/pirouette))
 
 ## Install
 

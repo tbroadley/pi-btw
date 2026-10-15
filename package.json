@@ -1,0 +1,24 @@
+{
+  "name": "pi-btw",
+  "version": "0.2.0",
+  "description": "A pi extension that adds a /btw command for quick side questions without interrupting the agent",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tbroadley/pi-btw.git"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

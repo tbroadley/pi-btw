@@ -14,14 +14,15 @@
  * - The Q&A is displayed in a widget above the editor (completely decoupled
  *   from the agent's message stream — no interruption at all)
  * - The widget auto-dismisses after 30 seconds, or press the shown shortcut
+ *   (or run /btw with no arguments, e.g. in pirouette where there is no TUI)
  * - Q&A pairs are persisted via appendEntry for session replay
  * - A context filter strips btw entries from the LLM context so they never
  *   pollute the main conversation
  */
 
-import { complete, type Message } from "@mariozechner/pi-ai";
-import type { ExtensionAPI, SessionEntry } from "@mariozechner/pi-coding-agent";
-import { convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
+import type { Message } from "@earendil-works/pi-ai";
+import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { convertToLlm, serializeConversation } from "@earendil-works/pi-coding-agent";
 
 const SIDE_SYSTEM_PROMPT = `You are answering a quick side question from the user. The user is currently working with a coding agent and has a question they want answered without interrupting their main task.
 
@@ -108,6 +109,10 @@ export default function (pi: ExtensionAPI) {
 		handler: async (args, ctx) => {
 			const question = args.trim();
 			if (!question) {
+				if (dismissTimer) {
+					clearWidget(ctx);
+					return;
+				}
 				ctx.ui.notify("Usage: /btw <question>", "warning");
 				return;
 			}
@@ -148,8 +153,12 @@ export default function (pi: ExtensionAPI) {
 					timestamp: Date.now(),
 				};
 
-				const apiKey = await ctx.modelRegistry.getApiKey(ctx.model);
-				const response = await complete(ctx.model, { systemPrompt, messages: [userMessage] }, { apiKey });
+				// modelRegistry.complete resolves auth (API keys, OAuth, provider
+				// headers/baseUrl) the same way the main agent does.
+				const response = await ctx.modelRegistry.complete(ctx.model, { systemPrompt, messages: [userMessage] });
+				if (response.stopReason === "error" || response.stopReason === "aborted") {
+					throw new Error(response.errorMessage || `request ${response.stopReason}`);
+				}
 
 				const answer = response.content
 					.filter((c): c is { type: "text"; text: string } => c.type === "text")
@@ -164,7 +173,7 @@ export default function (pi: ExtensionAPI) {
 						"",
 						...answer.split("\n"),
 						"",
-						`(auto-dismisses in ${WIDGET_DISMISS_MS / 1000}s · Ctrl+Shift+B to dismiss)`,
+						`(auto-dismisses in ${WIDGET_DISMISS_MS / 1000}s · Ctrl+Shift+B or /btw to dismiss)`,
 					];
 					showWidget(widgetLines, ctx);
 
