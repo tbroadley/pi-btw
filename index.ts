@@ -23,6 +23,7 @@
 import type { Message } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { convertToLlm, serializeConversation } from "@earendil-works/pi-coding-agent";
+import { Container, Spacer, Text } from "@earendil-works/pi-tui";
 
 const SIDE_SYSTEM_PROMPT = `You are answering a quick side question from the user. The user is currently working with a coding agent and has a question they want answered without interrupting their main task.
 
@@ -78,7 +79,17 @@ export default function (pi: ExtensionAPI) {
 	// ------------------------------------------------------------------
 	function showWidget(lines: string[], ctx: { ui: { setWidget: Function; setStatus: Function } }) {
 		if (dismissTimer) clearTimeout(dismissTimer);
-		ctx.ui.setWidget(WIDGET_ID, lines);
+		// Use the factory form (rather than passing `lines` directly) so each
+		// line is a word-wrapping Text component. The TUI already does this for
+		// string[] widgets, but pirouette renders string[] widgets verbatim in a
+		// horizontally-scrolling block; with a component it renders at a fixed
+		// width and gets wrapped lines back.
+		ctx.ui.setWidget(WIDGET_ID, () => {
+			const container = new Container();
+			// Text renders nothing for an empty string, so keep blank lines as spacers.
+			for (const line of lines) container.addChild(line ? new Text(line, 1, 0) : new Spacer(1));
+			return container;
+		});
 		dismissTimer = setTimeout(() => {
 			ctx.ui.setWidget(WIDGET_ID, undefined);
 			dismissTimer = undefined;
